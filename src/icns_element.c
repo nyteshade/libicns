@@ -28,7 +28,6 @@ Boston, MA 02110-1301, USA.
 #include "icns.h"
 #include "icns_internals.h"
 
-
 //***************************** icns_get_element_from_family **************************//
 // Parses requested data from an icon family - puts it into a icon element
 
@@ -130,6 +129,73 @@ int icns_get_element_from_family(icns_family_t *iconFamily,icns_type_t iconType,
 	}
 	
 	return error;
+}
+
+//***************************** icns_set_element_size_in_family **************************//
+// Adds/updates the icns element's size of it's type in the icon family
+
+int icns_set_element_size_in_family(icns_family_t **iconFamilyRef,icns_type_t soughtElementType,icns_size_t newElementSize)
+{
+	int foundData = 0;
+	icns_family_t	*iconFamily = NULL;
+	icns_type_t	iconFamilyType = ICNS_NULL_TYPE;
+	icns_size_t	iconFamilySize = 0;
+	icns_element_t *iconElement = NULL;
+	icns_type_t	elementType = ICNS_NULL_TYPE;
+	icns_size_t	elementSize = 0;
+	icns_uint32_t	dataOffset = 0;
+
+	if(iconFamilyRef == NULL)
+	{
+		icns_print_err("icns_set_element_size_in_family: icns family reference is NULL!\n");
+		return ICNS_STATUS_NULL_PARAM;
+	}
+	
+	iconFamily = *iconFamilyRef;
+	
+	if(iconFamily == NULL)
+	{
+		icns_print_err("icns_set_element_size_in_family: icns family is NULL!\n");
+		return ICNS_STATUS_NULL_PARAM;
+	}
+	
+	#ifdef ICNS_DEBUG
+	printf("Setting element size in icon family...\n");
+	#endif
+	
+	if(iconFamily->resourceType != ICNS_FAMILY_TYPE)
+	{
+		icns_print_err("icns_set_element_size_in_family: Invalid icns family!\n");
+		return ICNS_STATUS_INVALID_DATA;
+	}
+	
+	ICNS_READ_UNALIGNED(iconFamilyType, &(iconFamily->resourceType),sizeof( icns_type_t));
+	ICNS_READ_UNALIGNED(iconFamilySize, &(iconFamily->resourceSize),sizeof( icns_size_t));
+	
+	#ifdef ICNS_DEBUG
+	{
+		char typeStr[5];
+		printf("  family type '%s'\n",icns_type_str(iconFamilyType,typeStr));
+		printf("  family size: %d (0x%08X)\n",(int)iconFamilySize,iconFamilySize);
+	}
+	#endif
+			
+	dataOffset = sizeof(icns_type_t) + sizeof(icns_size_t);
+	
+	while ( (foundData == 0) && (dataOffset < iconFamilySize) )
+	{
+		iconElement = ((icns_element_t*)(((char*)iconFamily)+dataOffset));
+		ICNS_READ_UNALIGNED(elementType, &(iconElement->elementType),sizeof( icns_type_t));
+		ICNS_READ_UNALIGNED(elementSize, &(iconElement->elementSize),sizeof( icns_size_t));
+		
+		if(elementType == soughtElementType)
+		{
+			ICNS_WRITE_UNALIGNED(&(iconElement->elementSize), newElementSize, sizeof(icns_size_t));
+			return ICNS_STATUS_OK;
+		}
+	}
+	
+	return ICNS_STATUS_MISSING_ELEMENT;
 }
 
 //***************************** icns_set_element_in_family **************************//
@@ -742,4 +808,128 @@ exception:
 	}
 	
 	return error;
+}
+
+void icns_print_element(icns_element_t* element, const char* prefix, icns_uint16_t indentation)
+{
+	char* buffer = NULL;
+
+	icns_sprint_element(&buffer, element, prefix, indentation);
+	if (buffer)
+	{
+		#if ICNS_DEBUG
+		printf("%s", buffer);
+		#endif
+		free(buffer);
+	}
+	else 
+	{
+		icns_print_err("icns_print_element: cannot allocate buffer for printing\n");
+	}
+}
+
+void icns_sprint_element(char** buffer, icns_element_t* element, const char* prefix, icns_uint16_t indentation)
+{
+	char spaces[40];
+	char typeStr[5];
+	icns_size_t size;
+	uint16_t i, bufferSize = 2048;
+
+	if (buffer == NULL) {
+		icns_print_err("sprint_element: buffer must be non-null\n");
+		return;
+	}
+
+	*buffer = calloc(bufferSize, sizeof(char));
+	if (!(*buffer))
+	{
+		icns_print_err("sprint_element: unable to allocate memory for buffer\n");
+	}
+
+	memset(spaces, 0, 40);
+	for (i = 0; i < (indentation <= 40 ? indentation : 40); i++) {
+		spaces[i] = ' ';
+	}
+
+	icns_type_str(element->elementType, typeStr);
+	size = element->elementSize;
+
+	if (prefix)
+		snprintf((*buffer), bufferSize, "%s\n", prefix);
+
+	snprintf((*buffer), bufferSize, "%s%selement type: '%s'\n", *buffer, spaces, typeStr);
+	snprintf((*buffer), bufferSize, "%s%selement size: %d (0x%08X)\n", *buffer, spaces, (int)size, size);
+
+	return;
+}
+
+icns_element_t* icns_dup_element(const icns_element_t* toBeCopied, uint32_t dataSize, icns_bool_t isBigEndian)
+{
+	icns_element_t* element = calloc(1, sizeof(icns_element_t) - 1 + dataSize);
+
+	if(!element)
+		return NULL;
+
+	memcpy_var(&(element->elementType), &(toBeCopied->elementType), sizeof(icns_type_t), isBigEndian);
+	memcpy_var(&(element->elementSize), &(toBeCopied->elementSize), sizeof(icns_size_t), isBigEndian);
+	memcpy_var(&(element->elementData), &(toBeCopied->elementData), dataSize, kICNSFalse);
+
+	return element;
+}
+
+int icns_parse_elements_from_data(icns_byte_t *elementData, icns_size_t elementDataByteSize, icns_element_list_t **elements) 
+{
+	icns_element_list_t* list = NULL;
+	icns_element_list_t* node = NULL;
+
+	icns_uint32_t numElements = 0;
+	icns_uint32_t dataOffset = 0;
+	icns_element_t *iconElement = NULL;
+
+	icns_type_t elementType = ICNS_NULL_TYPE;
+	icns_size_t elementSize = 0;
+	icns_bool_t dataIsBigEndian = 0;
+
+	const char fnName[] = "icns_parse_elements_from_data:";
+
+	if(icns_create_element_list(&list) != ICNS_STATUS_OK)
+		return ICNS_STATUS_NO_MEMORY;
+
+	icns_print_dbg(fnName, "Processing %d bytes of data\n", elementDataByteSize);
+
+	// first count them
+	while (dataOffset < elementDataByteSize) 
+	{
+		iconElement = ((icns_element_t*)(((char*)elementData)+dataOffset));		
+
+		memcpy_be(&(elementType), &(iconElement->elementType), sizeof(icns_size_t));
+		if (icns_known_type(elementType))
+		{
+			dataIsBigEndian = 1;
+		}
+
+		memcpy_var(&(elementSize), &(iconElement->elementSize), sizeof(icns_size_t), dataIsBigEndian);
+		if (elementSize == 0) {
+			break;
+		}
+
+		icns_copy_element_to_list(list, iconElement);		
+			
+		dataOffset += elementSize;
+		numElements++;
+	}
+
+	icns_print_dbg(fnName, "-------------- TESTING --------------\n");
+	for (node = list; node; node = node->next)
+	{
+		if(node->element != NULL)
+			icns_print_element(node->element, fnName, 2);
+		else
+		  icns_print_err("list node element is NULL\n");
+	}
+	icns_print_dbg(fnName, "-------------- TESTING --------------\n");
+
+	*elements = list;
+
+	return numElements;
 }

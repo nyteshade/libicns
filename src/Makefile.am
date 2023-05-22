@@ -8,6 +8,7 @@ libicns_la_LIBADD = @PNG_LIBS@ @JP2000_LIBS@
 libicns_la_SOURCES = \
   icns_debug.c \
   icns_element.c \
+  icns_element_list.c \
   icns_family.c \
   icns_image.c \
   icns_io.c \

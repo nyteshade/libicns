@@ -28,6 +28,123 @@ Boston, MA 02110-1301, USA.
 #include "icns.h"
 #include "icns_internals.h"
 
+/********* The constant type names usable in code ***********/
+
+const icns_type_t kICNSTypes[] = {
+  0x49434E23, // "ICN#"
+  0x49434F4E, // "ICON"
+  0x544F4320, // "TOC "
+  0x64726F70, // "drop"
+  0x68386D6B, // "h8mk"
+	0x69633034, // "ic04"
+	0x69633035, // "ic05"
+  0x69633037, // "ic07"
+  0x69633038, // "ic08"
+  0x69633039, // "ic09"
+  0x69633130, // "ic10"
+  0x69633131, // "ic11"
+  0x69633132, // "ic12"
+  0x69633133, // "ic13"
+  0x69633134, // "ic14"
+  0x69636823, // "ich#"
+  0x69636834, // "ich4"
+  0x69636838, // "ich8"
+  0x69636C34, // "icl4"
+  0x69636C38, // "icl8"
+  0x69636D23, // "icm#"
+  0x69636D34, // "icm4"
+  0x69636D38, // "icm8"
+  0x69636E56, // "icnV"
+  0x69636E73, // "icns"
+	0x69637034, // "icp4"
+	0x69637035, // "icp5"
+	0x69637036, // "icp6"
+  0x69637323, // "ics#"
+  0x69637334, // "ics4"
+  0x69637338, // "ics8"
+	0x69637362, // "icsb"
+	0x69637342, // "icsB"
+  0x69683332, // "ih32"
+  0x696C3332, // "il32"
+	0x696E666F, // "info"
+  0x69733332, // "is32"
+  0x69743332, // "it32"
+  0x6C386D6B, // "l8mk"
+  0x6D42494E, // "mBIN"
+	0x6E616D65, // "name"
+  0x6F647270, // "odrp"
+  0x6F70656E, // "open"
+  0x6F766572, // "over"
+  0x73386D6B, // "s8mk"
+	0x73623234, // "sb24"
+	0x53423234, // "SB24"
+	0x73627470, // "sbtp"
+	0x736C6374, // "slct"
+  0x74386D6B, // "t8mk"
+  0x74696C65, // "tile"
+  0xFDD92FA8  // "\xFD\xD9\x2F\xA8"
+};
+
+const char *kICNSTypeNames[] = {
+  "ICN#",             // 0x49434E23
+  "ICON",             // 0x49434F4E
+  "TOC ",             // 0x544F4320
+  "drop",             // 0x64726F70
+  "h8mk",             // 0x68386D6B
+	"ic04",							// 0x69633034
+	"ic05",							// 0x69633035
+  "ic07",             // 0x69633037
+  "ic08",             // 0x69633038
+  "ic09",             // 0x69633039
+  "ic10",             // 0x69633130
+  "ic11",             // 0x69633131
+  "ic12",             // 0x69633132
+  "ic13",             // 0x69633133
+  "ic14",             // 0x69633134
+  "ich#",             // 0x69636823
+  "ich4",             // 0x69636834
+  "ich8",             // 0x69636838
+  "icl4",             // 0x69636C34
+  "icl8",             // 0x69636C38
+  "icm#",             // 0x69636D23
+  "icm4",             // 0x69636D34
+  "icm8",             // 0x69636D38
+  "icnV",             // 0x69636E56
+  "icns",             // 0x69636E73
+	"icp4", 						// 0x69637034
+	"icp5",							// 0x69637035
+	"icp6",							// 0x69637036
+  "ics#",             // 0x69637323
+  "ics4",             // 0x69637334
+  "ics8",             // 0x69637338
+	"icsb",							// 0x69637362
+	"icsB",             // 0x69637342
+  "ih32",             // 0x69683332
+  "il32",             // 0x696C3332
+	"info",             // 0x696E666F
+  "is32",             // 0x69733332
+  "it32",             // 0x69743332
+  "l8mk",             // 0x6C386D6B
+  "mBIN",             // 0x6D42494E
+	"name",             // 0x6E616D65
+  "odrp",             // 0x6F647270
+  "open",             // 0x6F70656E
+  "over",             // 0x6F766572
+  "s8mk",             // 0x73386D6B
+	"sb24",							// 0x73623234
+	"SB24",							// 0x53423234
+	"sbtp",             // 0x73627470
+	"slct",             // 0x736C6374
+  "t8mk",             // 0x74386D6B
+  "tile",             // 0x74696C65
+  "\xFD\xD9\x2F\xA8"  // 0xFDD92FA8
+};
+
+const icns_size_t kICNSTypesCount = 52;
+const icns_size_t kICNSTypeNamesCount = 52;
+
+const icns_bool_t kICNSTrue = 1;
+const icns_bool_t kICNSFalse = 0;
 
 /********* This variable is intentionally global ************/
 /********* scope is the internals of the icns library *******/
@@ -44,6 +161,8 @@ icns_uint32_t icns_get_element_order(icns_type_t iconType)
 	// data stored in the same element
 	switch(iconType)
 	{
+	case ICNS_DARK_MODE_DATA:
+	  return 101;
 	case ICNS_ICON_VERSION:
 		return 100;
 	case ICNS_512x512_2X_32BIT_ARGB_DATA:
@@ -122,6 +241,10 @@ icns_type_t icns_get_mask_type_for_icon_type(icns_type_t iconType)
 	// Obviously the version type has no mask
 	case ICNS_ICON_VERSION:
 		return ICNS_NULL_MASK;
+
+	// The dark mode icon type has no mask
+	case ICNS_DARK_MODE_DATA:
+	  return ICNS_NULL_MASK;
 		
 	// 32-bit image types > 256x256 - no mask (mask is already in image)
 	case ICNS_512x512_2X_32BIT_ARGB_DATA:
@@ -822,6 +945,40 @@ icns_bool_t icns_types_not_equal(icns_type_t typeA,icns_type_t typeB)
 		return 0;
 }
 
+icns_bool_t icns_known_type(icns_type_t iconType)
+{
+	icns_uint8_t i = 0;
+	icns_bool_t known = 0;
+
+	for (i = 0; i < kICNSTypesCount; i++)
+	{
+		if(iconType == kICNSTypes[i])
+		{
+			known = 1;
+			break;
+		}
+	}
+
+	return known;
+}
+
+icns_bool_t icns_known_type_string(const char* iconType)
+{
+	icns_uint8_t i = 0;
+	icns_bool_t known = 0;
+
+	for (i = 0; i < kICNSTypeNamesCount; i++)
+	{
+		if(strcmp(iconType, kICNSTypeNames[i]) == 0)
+		{
+			known = 1;
+			break;
+		}
+	}
+
+	return known;
+}
+
 const char * icns_type_str(icns_type_t type, char *strbuf)
 {
 	if(strbuf != NULL)
@@ -868,3 +1025,38 @@ void icns_print_err(const char *template, ...)
 	#endif
 }
 
+void icns_print_dbg(const char* prefix, const char* template, ...)
+{	
+	#ifdef ICNS_DEBUG
+	va_list ap;
+
+	if(prefix != NULL)
+	{
+		printf ("%s ", prefix);
+	}
+	va_start (ap, template);
+	vprintf (template, ap);
+	va_end (ap);
+	#endif
+}
+
+void memcpy_be(void* output, const void* input, size_t n) {
+    const uint8_t* inputBytes = (const uint8_t*)input;
+    uint8_t* outputBytes = (uint8_t*)output;
+
+    for (size_t i = 0; i < n; i++) {
+        outputBytes[i] = inputBytes[(n - 1 - i)];
+    }
+}
+
+void memcpy_le(void* output, const void* input, size_t n) {
+	memcpy(output, input, n);
+}
+
+void memcpy_var(void* output, const void* input, size_t n, icns_bool_t isBigEndian)
+{
+	if(isBigEndian)
+		memcpy_be(output, input, n);
+	else 
+		memcpy_le(output, input, n);
+}

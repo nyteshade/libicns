@@ -63,7 +63,6 @@ int icns_create_family(icns_family_t **iconFamilyOut)
 	return ICNS_STATUS_OK;
 }
 
-
 /***************************** icns_count_elements_in_family **************************/
 
 int icns_count_elements_in_family(icns_family_t *iconFamily, icns_sint32_t *elementTotal)

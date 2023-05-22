@@ -38,7 +38,7 @@ __attribute__ ((noinline)) void *icns_memcpy( void *dst, const void *src, size_t
 /***************************** ICNS_READ_UNALIGNED_BE **************************/
 /* NOTE: only accessible to icns_io.c */
 #define ICNS_READ_UNALIGNED_BE(val, addr, size)    icns_read_be(&(val), (addr), (size))
-static inline void icns_read_be(void *outp, void *inp, int size)
+inline void icns_read_be(void *outp, void *inp, int size)
 {
 	icns_byte_t	b[8] = {0,0,0,0,0,0,0,0};
 		
@@ -88,7 +88,7 @@ static inline void icns_read_be(void *outp, void *inp, int size)
 }
 
 #define ICNS_READ_UNALIGNED_LE(val, addr, size)    icns_read_le(&(val), (addr), (size))
-static inline void icns_read_le(void *outp, void *inp, int size)
+inline void icns_read_le(void *outp, void *inp, int size)
 {
 	icns_byte_t	b[8] = {0,0,0,0,0,0,0,0};
 		
@@ -136,7 +136,7 @@ static inline void icns_read_le(void *outp, void *inp, int size)
 /***************************** ICNS_WRITE_UNALIGNED_BE **************************/
 /* NOTE: only accessible to icns_io.c */
 #define ICNS_WRITE_UNALIGNED_BE(addr, val, size)    icns_write_be((addr), &(val), (size))
-static inline void icns_write_be(void *outp, void *inp, int size)
+inline void icns_write_be(void *outp, void *inp, int size)
 {
 	icns_byte_t	b[8] = {0,0,0,0,0,0,0,0};
 	

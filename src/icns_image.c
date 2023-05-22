@@ -405,6 +405,12 @@ int icns_get_image_from_element(icns_element_t *iconElement,icns_image_t *imageO
 		printf("  size is: %d\n",(int)elementSize);
 	}	
 	#endif
+
+	if(elementType == ICNS_DARK_MODE_DATA) 
+	{
+		icns_print_err("icns_get_image_from_element: Dark mode icns are not a single image.\n");
+		return ICNS_STATUS_INVALID_DATA;
+	}
 	
 	if(elementSize <= 8)
 	{
@@ -583,6 +589,12 @@ int icns_get_mask_from_element(icns_element_t *maskElement,icns_image_t *imageOu
 		printf("  size is: %d\n",(int)elementSize);
 	}
 	#endif
+
+	if(elementType == ICNS_DARK_MODE_DATA)
+	{
+		icns_print_err("icns_get_image_from_element: Dark mode element is not a single image\n");
+		return ICNS_STATUS_INVALID_DATA;
+	}
 	
 	if(elementSize <= 8)
 	{

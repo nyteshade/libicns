@@ -177,10 +177,6 @@ icns_bool_t icns_rsrc_header_check(icns_size_t dataSize,icns_byte_t *dataPtr,icn
 icns_bool_t icns_macbinary_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
 icns_bool_t icns_apple_encoded_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
 
-// icns_png.c
-int icns_image_to_png(icns_image_t *image, icns_size_t *dataSizeOut, icns_byte_t **dataPtrOut);
-int icns_png_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image_t *imageOut);
-
 // icns_jp2.c
 #ifdef ICNS_JASPER
 int icns_jas_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image_t *imageOut);
@@ -200,6 +196,7 @@ void icns_place_jp2_cdef(icns_byte_t *dataPtr, icns_size_t dataSize);
 // icns_utils.c
 icns_uint32_t icns_get_element_order(icns_type_t iconType);
 void icns_print_err(const char *template, ...);
+void icns_print_dbg(const char* prefix, const char *template, ...);
 
 // Stop hiding symbols
 #pragma GCC visibility pop
